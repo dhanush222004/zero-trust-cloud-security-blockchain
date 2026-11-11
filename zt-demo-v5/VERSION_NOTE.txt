@@ -1,0 +1,12 @@
+v4 changes vs v3 (v3 files are not edited; this is a separate folder):
+ + repo_patched/app.py: GET /challenge, POST /enroll, POST /access/signed, GET /version (signature check with eth-account, already in the pinned packages).
+ + client.py, run_client.sh: key generation and signed requests (private key stays in my_key.json, created with owner-only permissions).
+ + index.html: "Real vs simulated (v4)" panel.
+ + README_RUN.txt: v4 steps and threat model.
+ Unchanged: typed /register /access /attack, the contract, the audit file format, the pins.
+ New file event names in audit_log.jsonl: access_signed, signed_rejected, enroll_rejected (address and reason, never the key).
+ + client.py demo (one command: key kept if present, enroll only if needed, signed access, replay test, impostor test, PASS/FAIL lines). No new proof route.
+
+v5 NOTE: v5 is a separate version. v4 files are unchanged inside repo/ and the v4 routes. v5 adds auth5.py (blueprint /v5) and v5.html. See README_V5.txt for what is real and what is simulated or missing.
+ + signed text also binds the contract address of this run (new on every restart), so a signature made for one server run does not verify on another.
+ + ZT_PORT environment variable (default 5057) so v4 can run beside v3:  ZT_PORT=5058 bash run_linux_mac.sh   and   ZT_PORT=5058 bash run_client.sh keygen
