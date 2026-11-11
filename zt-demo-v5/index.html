@@ -1,0 +1,79 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zero-Trust Access Console</title>
+<style>
+:root{--bg:#0b1220;--card:#121b2e;--line:#22304d;--tx:#e6edf8;--mut:#8da0c0;--ok:#22c55e;--no:#ef4444;--ac:#3b82f6;--warn:#f59e0b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--line)}
+h1{font-size:20px;margin:0}h1 small{display:block;color:var(--mut);font-weight:400;font-size:13px;margin-top:2px}
+.pill{font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+.pill b{color:var(--ok)}
+main{max-width:1100px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h2{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:0 0 12px}
+.full{grid-column:1/-1}
+.banner{background:#2a2110;border:1px solid #5c4513;color:#fcd9a0;border-radius:10px;padding:10px 14px;font-size:13px}
+label{font-size:13px;color:var(--mut)}input{width:100%;margin:6px 0 12px;padding:11px 12px;border-radius:9px;border:1px solid var(--line);background:#0c1527;color:var(--tx);font-size:15px}
+.row{display:flex;flex-wrap:wrap;gap:8px}button{cursor:pointer;border:0;border-radius:9px;padding:10px 14px;font-weight:600;font-size:14px;color:#fff;background:var(--ac)}
+button.sec{background:#243453}button.dng{background:#7f1d1d}
+.verdict{display:flex;align-items:center;gap:14px;min-height:84px}
+.badge{font-size:26px;font-weight:800;padding:12px 20px;border-radius:12px;letter-spacing:.04em}
+.ALLOW{background:#0f3a22;color:var(--ok);border:1px solid #166534}.DENY{background:#3b1313;color:var(--no);border:1px solid #7f1d1d}.IDLE{background:#17223a;color:var(--mut);border:1px solid var(--line)}
+pre{margin:10px 0 0;background:#0a1222;border:1px solid var(--line);border-radius:9px;padding:10px;font-size:12.5px;color:#b9c8e4;overflow:auto;max-height:150px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#0c1527;border:1px solid var(--line);border-radius:10px;padding:10px}
+.stat b{display:block;font-size:24px}.stat span{font-size:12px;color:var(--mut)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:600}
+.t-ok{color:var(--ok);font-weight:700}.t-no{color:var(--no);font-weight:700}
+.empty{color:var(--mut);font-size:13px;padding:10px 0}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+</style></head><body>
+<header><h1>Zero-Trust Access Console<small>Sample dashboard over the existing Flask API &middot; every result below is a live API response</small></h1>
+<div class="pill">Local test chain (in-memory) &middot; <b>prototype</b>, not production</div></header>
+<main>
+<div class="card full"><div class="banner"><b>What is real here:</b> each identity gets its own test account. Every access check is written to the contract's audit log on a local <i>in-memory</i> test chain (cleared when the app stops) and also saved to <code>audit_log.jsonl</code> (hashes only) so history survives a restart. Not a production blockchain.</div></div>
+<div class="card"><h2>Identity</h2>
+<label for="id">Identity (e.g. email)</label><input id="id" value="user@example.com" autocomplete="off">
+<div class="row"><button onclick="act('register')">Register (admin)</button><button class="sec" onclick="act('access')">Check access</button><button class="dng" onclick="act('attack')">Simulate attack</button></div>
+<div class="note">Identity is hashed with SHA-256 by the API before the contract check.</div></div>
+<div class="card"><h2>Latest decision</h2><div class="verdict"><div id="badge" class="badge IDLE">NO REQUEST</div><div id="what" style="color:var(--mut)">Run a request to see the API's answer.</div></div><pre id="raw">{}</pre></div>
+<div class="card"><h2>This browser session</h2><div class="stats"><div class="stat"><b id="sA">0</b><span>Allowed</span></div><div class="stat"><b id="sD">0</b><span>Denied</span></div><div class="stat"><b id="sR">0</b><span>Registers</span></div></div>
+<table style="margin-top:12px"><thead><tr><th>Time</th><th>Action</th><th>Identity</th><th>Result</th></tr></thead><tbody id="hist"></tbody></table><div id="hEmpty" class="empty">No requests yet.</div>
+<div class="note">Rows marked (earlier) are re-read from the saved file after a refresh (hash only, never the typed email). Rows from this page visit show the typed identity and are lost on refresh. This is not the blockchain audit log.</div></div>
+<div class="card full"><h2>Real vs simulated (v4)</h2>
+<table><thead><tr><th>Part</th><th>Status</th></tr></thead><tbody>
+<tr><td>Buttons above (typed identity)</td><td><b>Simulation.</b> Anyone can type any name. This is not proof of who is calling.</td></tr>
+<tr><td>Signed access (bash run_client.sh demo)</td><td><b>Real key proof.</b> The caller signs a one-time challenge (60 s, single use). The server checks the signature, then asks the contract. A typed name, a replayed signature, or another key is rejected.</td></tr>
+<tr><td>Who a key belongs to</td><td><b>Not verified.</b> Anyone can enroll a key. Nothing links a key to a real person.</td></tr>
+<tr><td>Contract / admin</td><td>Test chain in memory. The admin account is held by this API process.</td></tr>
+<tr><td>Log file</td><td>Normal local file, editable, not tamper-proof. No TLS on localhost. Not production security.</td></tr>
+</tbody></table>
+<div class="note">Easiest: in a second terminal, same folder, run <code>bash run_client.sh demo</code> (uses your key if you already have one, enrolls it if needed, then runs the 3 checks). Single steps: <code>keygen</code>, <code>enroll</code>, <code>access</code>, <code>replay-test</code>, <code>impostor-test</code>. If v4 runs on port 5058, put <code>ZT_PORT=5058</code> in front of the command. The private key stays in my_key.json on this computer only.<br><b>Where it shows:</b> terminal requests do NOT change "Latest decision" or the "This browser session" counters above (they stay as they are). They appear in the Audit log after "Refresh from API", and as "(earlier)" rows after a page reload.</div></div></div>
+<div class="card"><h2>Audit log</h2><div class="row"><button class="sec" onclick="logs()">Refresh from API</button></div>
+<div id="logs" class="empty">Not loaded.</div><div class="note">Top: read from the contract on the test chain (this run only). Bottom: saved file audit_log.jsonl (includes earlier runs).</div></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);let A=0,D=0,R=0;
+const post=(p,b)=>{const c=new AbortController();const t=setTimeout(()=>c.abort(),20000);return fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b),signal:c.signal}).then(r=>r.json()).finally(()=>clearTimeout(t))};
+let busy=false;
+function addRow(a,i,ok,txt){const t=new Date().toLocaleTimeString([], {hour12:false});$('hEmpty').style.display='none';
+ const tr=document.createElement('tr');tr.innerHTML=`<td>${t}</td><td>${a}</td><td></td><td class="${ok===null?'':ok?'t-ok':'t-no'}">${txt}</td>`;tr.children[2].textContent=i;$('hist').prepend(tr)}
+function show(kind,j,label){const b=$('badge');if(kind==='x'){b.className='badge IDLE';b.textContent='REGISTERED';$('what').textContent=label}else{b.className='badge '+(kind?'ALLOW':'DENY');b.textContent=kind?'ALLOW':'DENY';$('what').textContent=label}
+ $('raw').textContent=JSON.stringify(j,null,2);$('sA').textContent=A;$('sD').textContent=D;$('sR').textContent=R}
+async function act(k){const identity=$('id').value.trim();if(!identity||busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);$('badge').className='badge IDLE';$('badge').textContent='WORKING...';$('what').textContent='Waiting for the API (the contract call can take a moment).';
+ try{if(k==='register'){const j=await post('/register',{identity,role:'USER'});R++;addRow('register',identity,null,j.status||'ok');show('x',j,'API: '+(j.status||'ok')+(j.account?' - account '+j.account:''))}
+ else if(k==='access'){const j=await post('/access',{identity});j.access?A++:D++;addRow('access',identity,j.access,j.access?'ALLOW':'DENY');show(j.access,j,j.access?'Identity matches the registered hash.':'Identity does not match the registered hash.')}
+ else{const j=await post('/attack',{identity});j.access?A++:D++;addRow('attack',identity,j.access,j.access?'ALLOW':'DENY');show(j.access,j,j.access?'Unexpected: attack identity was allowed.':'Unauthorized attempt was denied.')}}
+ catch(e){$('badge').className='badge IDLE';$('badge').textContent='API ERROR';$('what').textContent=(e&&e.name==='AbortError')?'No answer from the API after 20 seconds. Check the terminal window.':String(e)}
+ finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false)}}
+async function logs(){try{const c=await fetch('/logs').then(r=>r.json());const h=await fetch('/logs/history').then(r=>r.json());const el=$('logs');
+ const ct=c.length?'<table><tr><th>Account</th><th>Role</th><th>Access</th></tr>'+c.slice(-5).reverse().map(x=>`<tr><td>${x.user.slice(0,10)}&hellip;</td><td>${x.role}</td><td class="${x.access?'t-ok':'t-no'}">${x.access?'ALLOW':'DENY'}</td></tr>`).join('')+'</table>':'<div class="empty">Chain returned 0 entries.</div>';
+ const ev=h.filter(x=>x.event!=='register');const ff=await fetch('/logs/file').then(r=>r.json());
+ const ht=ev.length?'<table><tr><th>Saved</th><th>Event</th><th>Hash</th><th>Result</th></tr>'+ev.slice(-5).reverse().map(x=>`<tr><td>${(x.saved_at||'').slice(11)}</td><td>${x.event}</td><td>${(x.identity_sha256||'').slice(0,8)}&hellip;</td><td class="${x.access?'t-ok':'t-no'}">${x.access?'ALLOW':'DENY'}</td></tr>`).join('')+'</table>':'<div class="empty">File has 0 access entries.</div>';
+ el.className='';el.innerHTML=`<div class="note" style="margin:0 0 6px"><b>On test chain:</b> ${c.length} entries</div>${ct}<div class="note" style="margin:12px 0 6px"><b>Saved file:</b> ${ev.length} access entries${ff.last_save_error?' <span class="t-no">(SAVE ERROR: '+ff.last_save_error+')</span>':''}<br><code style="font-size:11px;word-break:break-all">${ff.path}</code></div>${ht}`}catch(e){$('logs').textContent='Could not reach the log endpoints: '+e}}
+async function restore(){try{const h=await fetch('/logs/history').then(r=>r.json());const ev=h.filter(x=>x.event!=='register').slice(-8);if(!ev.length)return;$('hEmpty').style.display='none';
+ ev.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${(x.saved_at||'').slice(11)}</td><td>${x.event} (earlier)</td><td></td><td class="${x.access?'t-ok':'t-no'}">${x.access?'ALLOW':'DENY'}</td>`;tr.children[2].textContent='hash '+(x.identity_sha256||'').slice(0,8)+'…';$('hist').prepend(tr)})}catch(e){}}
+restore();
+if(location.hash==='#demo'){(async()=>{const s=ms=>new Promise(r=>setTimeout(r,ms));await s(800);window.__step=1;
+ $('id').value='user@example.com';await act('register');await s(1500);await act('access');await s(1500);
+ $('id').value='wrong@example.com';await act('access');await s(1500);$('id').value='attacker@evil.com';await act('attack');await s(1500);await logs();window.__done=1})()}
+</script></body></html>
