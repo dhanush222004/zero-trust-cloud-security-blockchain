@@ -1,0 +1,32 @@
+ZERO-TRUST DEMO v5 - QUICK START ON LINUX (Kali, Ubuntu, Debian)
+Everything stays on your computer. Nothing is uploaded.
+
+BEFORE YOU START
+- You need Python 3.10 or newer, with venv, and internet for the first run (it installs packages and downloads the Solidity compiler, about 1-2 minutes).
+- If python3 -m venv fails:  sudo apt install python3-venv
+- Use a normal browser (Chrome, Chromium or Firefox).
+
+STEPS
+1. Unzip the file into a NEW folder (do not overwrite v3 or v4).
+2. Open a terminal inside that folder and run:   bash run_linux_mac.sh
+   Leave this terminal open. It is the demo server.
+3. On the very first start the terminal prints a ONE-TIME SETUP CODE. Copy it.
+4. Open this address in the browser:   http://localhost:5057/v5/ui
+   (/ui now redirects to /v5/ui. If an old copy shows a "v4 API disabled" error, you opened the old v4 page: use /v5/ui.)
+5. Under "First-time setup": paste the setup code, choose an admin username, an email, and a password (10 or more characters). Click the button. This browser is now the admin browser.
+6. Try it: as admin create a user (pick a role: admin, editor or viewer), copy the invite code, open the invite in a SECOND browser profile (or a private window), choose that user's password. Then log in with that second browser as the new user.
+7. To see the device-change flow: log in as a user from a third browser profile. It is refused. Use "New device or browser?" to request a change. The code is shown in the server terminal (it is a SIMULATION, no email or SMS is sent) and the admin must also approve it in the admin browser.
+
+STOP:   Ctrl+C in the server terminal.
+RESET:  stop the app, then delete the folder zt5_data. The next start prints a new setup code.
+Another port: ZT_PORT=5058 bash run_linux_mac.sh  (then use :5058 in the address).
+
+IMPORTANT LIMITS (full list in README_V5.txt)
+- The one-time code is a SIMULATION. Real Gmail or email delivery is NOT working and was never verified.
+- Tested only on Linux with Python 3.10 (clean extract, automated checks plus a screenshot check). Not tested on Windows or on your own Kali machine.
+- The browser key identifies a browser profile, not a person or a device. Clearing site data loses it (use device change).
+- Local HTTP only. Not production security. Not audited.
+
+IF SOMETHING GOES WRONG
+- "Address already in use": another copy is running. Close it, or use another port as above.
+- Setup code lost: stop the app and start it again before the first admin exists, a new code is printed. After an admin exists, delete zt5_data to start over.
